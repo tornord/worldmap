@@ -1,4 +1,4 @@
-module.exports = function (collection, iteratee) {
+export default function keyBy(collection, iteratee) {
   return collection.reduce((p, c) => {
     const key = iteratee(c);
     if (typeof key !== "undefined" && key !== null) {

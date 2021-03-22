@@ -2,7 +2,6 @@ const fs = require("fs");
 const { parseString } = require("xml2js");
 const { svgPathProperties } = require("svg-path-properties");
 // const clipboardy = require("clipboardy");
-const keyBy = require("./keyBy");
 
 const worldmapsvg = fs.readFileSync("./src/generate/worldmap.svg", "utf-8");
 const countryMids = JSON.parse(fs.readFileSync("./src/generate/countryMids.json", "utf-8"));
@@ -17,6 +16,16 @@ const continentCodes = fs
   .map((d) => d.split(","));
 
 const continentCodesByCountry = keyBy(continentCodes, (d) => d[3]);
+
+function keyBy(collection, iteratee) {
+  return collection.reduce((p, c) => {
+    const key = iteratee(c);
+    if (typeof key !== "undefined" && key !== null) {
+      p[key] = c;
+    }
+    return p;
+  }, {});
+}
 
 function translate({ x, y }) {
   const dx = 0;
@@ -77,16 +86,38 @@ function gravity(points) {
   return { x: sumX / sumArea, y: sumY / sumArea };
 }
 
+function boundingRect(points) {
+  let minX = Math.min(...points.map((d) => d.x));
+  let minY = Math.min(...points.map((d) => d.y));
+  let maxX = Math.max(...points.map((d) => d.x));
+  let maxY = Math.max(...points.map((d) => d.y));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function mergeBoundingRects(boundingRects) {
+  let minX = Math.min(...boundingRects.map((d) => d.x));
+  let minY = Math.min(...boundingRects.map((d) => d.y));
+  let maxX = Math.max(...boundingRects.map((d) => d.x + d.width));
+  let maxY = Math.max(...boundingRects.map((d) => d.y + d.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function countryBoundingRect(country) {
+  const properties = new svgPathProperties(country.path);
+  const parts = properties.getParts();
+  return boundingRect(parts.map((e) => e.start));
+}
+
+function round(x) {
+  return Math.round(10 * x) / 10;
+}
+
 function main() {
   parseString(worldmapsvg, (err, xml) => {
     let paths = xml.svg.path;
     extraCountries.forEach((d) => {
       paths.push({ $: d });
     });
-    let minX = null;
-    let minY = null;
-    let maxX = null;
-    let maxY = null;
     const countries = [];
 
     for (let i = 0; i < paths.length; i++) {
@@ -97,21 +128,6 @@ function main() {
       }
       const properties = new svgPathProperties(path.$.d);
       const parts = properties.getParts();
-      for (let i = 0; i < parts.length; i++) {
-        const { x, y } = translate(parts[i].start);
-        if (minX === null || x < minX) {
-          minX = x;
-        }
-        if (maxX === null || x > maxX) {
-          maxX = x;
-        }
-        if (minY === null || y < minY) {
-          minY = y;
-        }
-        if (maxY === null || y > maxY) {
-          maxY = y;
-        }
-      }
       if (code.startsWith("BQ")) {
         continue;
       }
@@ -130,9 +146,20 @@ function main() {
       }
       let cm = countryMids.find((d) => d.code === code);
       if (!cm) {
+        const p = gravity(parts.map((d) => d.start));
+        cm = { midX: round(p.x), midY: round(p.y) };
+      } else {
+        cm.midX = round(Number(cm.midX));
+        cm.midY = round(Number(cm.midY));
         const p = gravity(parts.map((d) => ({ x: d.start.x, y: d.start.y })));
-        cm = { midX: p.x.toFixed(1), midY: p.y.toFixed(1) };
+        p.x = round(p.x);
+        p.y = round(p.y);
+        const h = Math.hypot(p.x - cm.midX, p.y - cm.midY);
+        if (h < 0.5) {
+          console.log(code, h, p.x, p.y, cm.midX, cm.midY);
+        }
       }
+      const br = boundingRect(parts.map((d) => d.start));
       countries.push({
         code,
         continentCode,
@@ -140,16 +167,17 @@ function main() {
         path: partsToPath(parts),
         midX: cm ? cm.midX : null,
         midY: cm ? cm.midY : null,
+        boundingRect: { x: round(br.x), y: round(br.y), width: round(br.width), height: round(br.height) },
       });
     }
-    let svg =
-      `<svg id="world" version="1.1" viewBox="${[minX, minY, maxX - minX, maxY - minY]
-        .map((d) => d.toFixed(1))
-        .join(" ")}" preserveAspectRatio="xMidYMid">\n` +
-      `${countries
-        .map((d, i) => `<path id="${d.code}" ${d.continentCode === null ? `class="nocontinent" ` : ""}d="${d.path}"/>`)
-        .join("\n")}\n` +
-      `</svg>`;
+    // let svg =
+    //   `<svg id="world" version="1.1" viewBox="${[minX, minY, maxX - minX, maxY - minY]
+    //     .map((d) => d.toFixed(1))
+    //     .join(" ")}" preserveAspectRatio="xMidYMid">\n` +
+    //   `${countries
+    //     .map((d, i) => `<path id="${d.code}" ${d.continentCode === null ? `class="nocontinent" ` : ""}d="${d.path}"/>`)
+    //     .join("\n")}\n` +
+    //   `</svg>`;
     // clipboardy.writeSync(svg);
     fs.writeFileSync("./src/countries.js", `module.exports = ${JSON.stringify(countries, null, 2)};\n`, "utf-8");
     console.log("meow");

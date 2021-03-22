@@ -22,16 +22,22 @@ text {
   pointer-events: none;
 }
 
-text.holdings {
+text.selected {
   fill: #000;
   text-anchor: middle;
   pointer-events: none;
 }
 
-path.holdings {
+path.selected {
   fill: #aaa;
 }
 
 path:hover {
   fill: #a7100cd0;
+}
+
+rect {
+  fill: none;
+  stroke: #999;
+  stroke-width: 0.3;
 }
