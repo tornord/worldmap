@@ -1,0 +1,7 @@
+build
+public
+src/generate
+src/reportWebVitals.js
+.vscode/launch.json 
+src/setupTests.js
+src/App.test.js
