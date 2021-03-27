@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { INITIAL_VALUE, ReactSVGPanZoom, TOOL_AUTO, ALIGN_CENTER } from "react-svg-pan-zoom";
+import { INITIAL_VALUE, ReactSVGPanZoom, TOOL_AUTO } from "react-svg-pan-zoom";
 // import { svgPathProperties } from 'svg-path-properties';
 import countries from "./countries";
 import keyBy from "./keyBy";
@@ -13,9 +13,22 @@ const countriesByCode = keyBy(countries, (d) => d.code);
 //   return Math.round(10 * x) / 10;
 // }
 
-console.log(INITIAL_VALUE);
+function expandBoundingRectToFitWidthHeightRatio(boundingRect, widthHeightRatio) {
+  let w1 = widthHeightRatio * boundingRect.height;
+  let h1 = boundingRect.width / widthHeightRatio;
+  if (w1 > boundingRect.width) {
+    h1 = boundingRect.height;
+  } else {
+    w1 = boundingRect.width;
+  }
+  const x1 = boundingRect.x + (boundingRect.width - w1) / 2;
+  const y1 = boundingRect.y + (boundingRect.height - h1) / 2;
+  return { x: x1, y: y1, width: w1, height: h1 };
+}
 
-export default function WorldMap({ dataByCountryCode, onClick, width, height, renderData }) {
+// console.log(expandBoundingRectToFitWidthHeightRatio({ x: 1, y: 1, width: 4, height: 3 }, 4 / 1));
+
+export default function WorldMap({ dataByCountryCode, onClick, width, height, renderData, fitToSelection }) {
   const viewer = useRef(null);
   window.viewer = viewer;
   const [value, setValue] = useState(INITIAL_VALUE);
@@ -33,13 +46,21 @@ export default function WorldMap({ dataByCountryCode, onClick, width, height, re
       onClick(countriesByCode[code]);
     }
   }
-  const br = mergeBoundingRects(Object.entries(dataByCountryCode).map((d) => countriesByCode[d[0]].boundingRect));
-  // console.log(value)
+  let br = { x: 0, y: 0, width: 2000, height: 857 };
+  const dataEntries = Object.entries(dataByCountryCode);
+  if (fitToSelection === true && dataEntries.length > 0) {
+    br = mergeBoundingRects(dataEntries.map((d) => countriesByCode[d[0]].boundingRect));
+  }
+  br = expandBoundingRectToFitWidthHeightRatio(br, width / height);
+  const margin = 20;
+  br.x -= margin;
+  br.y -= margin;
+  br.width += 2 * margin;
+  br.height += 2 * margin;
 
   useEffect(() => {
     console.log("bounding rect change");
     viewer.current.fitSelection(br.x, br.y, br.width, br.height);
-    // viewer.current.fitToViewer(ALIGN_CENTER,ALIGN_CENTER);
   }, [br.x, br.y, br.width, br.height]);
 
   return (
@@ -71,7 +92,7 @@ export default function WorldMap({ dataByCountryCode, onClick, width, height, re
         }}
         scaleFactor={1.1}
         scaleFactorMin={0.3}
-        scaleFactorMax={100}
+        scaleFactorMax={10}
         scaleFactorOnWheel={1.1}
         toolbarProps={{ position: "none" }}
         miniatureProps={{ position: "none" }}
@@ -91,7 +112,7 @@ export default function WorldMap({ dataByCountryCode, onClick, width, height, re
           {value.a && renderData
             ? Object.entries(dataByCountryCode).map((d, i) => renderData(countriesByCode[d[0]], d[1], i, value.a))
             : null}
-          <rect className="selection-bounds" {...br} />
+          {br ? <rect className="selection-bounds" {...br} /> : null}
         </svg>
       </ReactSVGPanZoom>
     </div>

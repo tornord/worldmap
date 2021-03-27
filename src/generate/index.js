@@ -1,7 +1,7 @@
 import fs from "fs";
 import { parseString } from "xml2js";
 import { svgPathProperties } from "svg-path-properties";
-import { boundingRect, midPoint } from "../helpers";
+import { boundingRect, midPoint } from "./helpers";
 // const clipboardy = require("clipboardy");
 
 const worldmapsvg = fs.readFileSync("./worldmap.svg", "utf-8");
@@ -89,9 +89,6 @@ function main() {
     for (let i = 0; i < paths.length; i++) {
       const path = paths[i];
       const code = path.$.class.replace("sm_state_", "");
-      if (code === "FR") {
-        console.log("meow");
-      }
       // eslint-disable-next-line new-cap
       const properties = new svgPathProperties(path.$.d);
       const parts = properties.getParts();
@@ -103,13 +100,13 @@ function main() {
       if (contCodes) {
         continentCode = contCodes[1];
       } else {
-        console.log("meow");
+        console.log(`Missing continent for, code=${code}`);
       }
       let name = null;
       if (countriesByCode[code]) {
         name = countriesByCode[code][1];
       } else {
-        console.log("meow");
+        console.log(`Country missing in countries.csv, code=${code}`);
       }
       let cm = countryMids.find((d) => d.code === code);
       if (!cm) {
