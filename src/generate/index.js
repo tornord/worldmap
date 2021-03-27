@@ -1,6 +1,8 @@
+"use strict";
+
 const fs = require("fs");
 const { parseString } = require("xml2js");
-const { svgPathProperties } = require("svg-path-properties");
+const { svgPathProperties: SvgPathProperties } = require("svg-path-properties");
 // const clipboardy = require("clipboardy");
 
 const worldmapsvg = fs.readFileSync("./src/generate/worldmap.svg", "utf-8");
@@ -34,6 +36,7 @@ function translate({ x, y }) {
 }
 function partsToPath(parts) {
   return (
+    // eslint-disable-next-line prefer-template
     parts
       .map((d, i, arr) => {
         const pp = arr[(i + arr.length - 1) % arr.length];
@@ -103,7 +106,7 @@ function mergeBoundingRects(boundingRects) {
 }
 
 function countryBoundingRect(country) {
-  const properties = new svgPathProperties(country.path);
+  const properties = new SvgPathProperties(country.path);
   const parts = properties.getParts();
   return boundingRect(parts.map((e) => e.start));
 }
@@ -113,6 +116,7 @@ function round(x) {
 }
 
 function main() {
+  // eslint-disable-next-line handle-callback-err
   parseString(worldmapsvg, (err, xml) => {
     let paths = xml.svg.path;
     extraCountries.forEach((d) => {
@@ -126,7 +130,7 @@ function main() {
       if (code === "FR") {
         console.log("meow");
       }
-      const properties = new svgPathProperties(path.$.d);
+      const properties = new SvgPathProperties(path.$.d);
       const parts = properties.getParts();
       if (code.startsWith("BQ")) {
         continue;
