@@ -1,19 +1,18 @@
-"use strict";
-
-const fs = require("fs");
-const { parseString } = require("xml2js");
-const { svgPathProperties: SvgPathProperties } = require("svg-path-properties");
+import fs from "fs";
+import { parseString } from "xml2js";
+import { svgPathProperties } from "svg-path-properties";
+import { boundingRect, midPoint } from "./helpers";
 // const clipboardy = require("clipboardy");
 
-const worldmapsvg = fs.readFileSync("./src/generate/worldmap.svg", "utf-8");
-const countryMids = JSON.parse(fs.readFileSync("./src/generate/countryMids.json", "utf-8"));
+const worldmapsvg = fs.readFileSync("./worldmap.svg", "utf-8");
+const countryMids = JSON.parse(fs.readFileSync("./countryMids.json", "utf-8"));
 const countries = fs
-  .readFileSync("./src/generate/countries.csv", "utf-8")
+  .readFileSync("./countries.csv", "utf-8")
   .split("\n")
   .map((d) => d.split("\t"));
 const countriesByCode = keyBy(countries, (d) => d[0]);
 const continentCodes = fs
-  .readFileSync("./src/generate/country-and-continent-codes-list.csv", "utf-8")
+  .readFileSync("./country-and-continent-codes-list.csv", "utf-8")
   .split("\n")
   .map((d) => d.split(","));
 
@@ -43,8 +42,8 @@ function partsToPath(parts) {
         const p = arr[i % arr.length];
         const { x: px, y: py } = translate(pp.start);
         const { x, y } = translate(p.start);
-        let z = pp.length < 0.01 && i !== 0 ? "Z" : "";
-        if (pp.length < 0.01 || i == 0) {
+        const z = pp.length < 0.01 && i !== 0 ? "Z" : "";
+        if (pp.length < 0.01 || i === 0) {
           return `${z}M${x.toFixed(1)},${y.toFixed(1)}`;
         }
         const dx = x - px;
@@ -74,43 +73,6 @@ const extraCountries = [
   { class: "sm_state_MC", d: "M1021.84,222.75l0.1,0.7h0.9l0.8-0.5l0.2-0.8l-0.7-0.2L1021.84,222.75z" },
 ];
 
-function gravity(points) {
-  let sumArea = 0,
-    sumX = 0,
-    sumY = 0;
-  for (let i = 0; i < points.length; i++) {
-    let i_p = (i + 1) % points.length;
-    let g = points[i].x * points[i_p].y - points[i_p].x * points[i].y;
-    sumArea += g;
-    sumX += (points[i].x + points[i_p].x) * g;
-    sumY += (points[i].y + points[i_p].y) * g;
-  }
-  sumArea = 3 * sumArea;
-  return { x: sumX / sumArea, y: sumY / sumArea };
-}
-
-function boundingRect(points) {
-  let minX = Math.min(...points.map((d) => d.x));
-  let minY = Math.min(...points.map((d) => d.y));
-  let maxX = Math.max(...points.map((d) => d.x));
-  let maxY = Math.max(...points.map((d) => d.y));
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
-function mergeBoundingRects(boundingRects) {
-  let minX = Math.min(...boundingRects.map((d) => d.x));
-  let minY = Math.min(...boundingRects.map((d) => d.y));
-  let maxX = Math.max(...boundingRects.map((d) => d.x + d.width));
-  let maxY = Math.max(...boundingRects.map((d) => d.y + d.height));
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
-function countryBoundingRect(country) {
-  const properties = new SvgPathProperties(country.path);
-  const parts = properties.getParts();
-  return boundingRect(parts.map((e) => e.start));
-}
-
 function round(x) {
   return Math.round(10 * x) / 10;
 }
@@ -130,7 +92,8 @@ function main() {
       if (code === "FR") {
         console.log("meow");
       }
-      const properties = new SvgPathProperties(path.$.d);
+      // eslint-disable-next-line new-cap
+      const properties = new svgPathProperties(path.$.d);
       const parts = properties.getParts();
       if (code.startsWith("BQ")) {
         continue;
@@ -150,12 +113,12 @@ function main() {
       }
       let cm = countryMids.find((d) => d.code === code);
       if (!cm) {
-        const p = gravity(parts.map((d) => d.start));
+        const p = midPoint(parts.map((d) => d.start));
         cm = { midX: round(p.x), midY: round(p.y) };
       } else {
         cm.midX = round(Number(cm.midX));
         cm.midY = round(Number(cm.midY));
-        const p = gravity(parts.map((d) => ({ x: d.start.x, y: d.start.y })));
+        const p = midPoint(parts.map((d) => ({ x: d.start.x, y: d.start.y })));
         p.x = round(p.x);
         p.y = round(p.y);
         const h = Math.hypot(p.x - cm.midX, p.y - cm.midY);
@@ -183,7 +146,7 @@ function main() {
     //     .join("\n")}\n` +
     //   `</svg>`;
     // clipboardy.writeSync(svg);
-    fs.writeFileSync("./src/countries.js", `module.exports = ${JSON.stringify(countries, null, 2)};\n`, "utf-8");
+    fs.writeFileSync("../countries.js", `module.exports = ${JSON.stringify(countries, null, 2)};\n`, "utf-8");
     console.log("meow");
   });
 }

@@ -1,8 +1,6 @@
-"use strict";
+import { svgPathProperties } from "svg-path-properties";
 
-const { svgPathProperties: SvgPathProperties } = require("svg-path-properties");
-
-function midPoint(points) {
+export function midPoint(points) {
   let sumArea = 0,
     sumX = 0,
     sumY = 0;
@@ -22,7 +20,7 @@ function midPoint(points) {
   };
 }
 
-function boundingRect(points) {
+export function boundingRect(points) {
   const minX = Math.min(...points.map((d) => d.x));
   const minY = Math.min(...points.map((d) => d.y));
   const maxX = Math.max(...points.map((d) => d.x));
@@ -35,7 +33,7 @@ function boundingRect(points) {
   };
 }
 
-function mergeBoundingRects(boundingRects) {
+export function mergeBoundingRects(boundingRects) {
   const minX = Math.min(...boundingRects.map((d) => d.x));
   const minY = Math.min(...boundingRects.map((d) => d.y));
   const maxX = Math.max(...boundingRects.map((d) => d.x + d.width));
@@ -49,9 +47,8 @@ function mergeBoundingRects(boundingRects) {
 }
 
 function countryBoundingRect(country) {
-  const properties = new SvgPathProperties(country.path);
+  // eslint-disable-next-line new-cap
+  const properties = new svgPathProperties(country.path);
   const parts = properties.getParts();
   return boundingRect(parts.map((e) => e.start));
 }
-
-module.exports = { midPoint, boundingRect };
