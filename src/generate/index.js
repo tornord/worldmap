@@ -1,7 +1,7 @@
 import fs from "fs";
 import { parseString } from "xml2js";
 import { svgPathProperties } from "svg-path-properties";
-import { boundingRect, midPoint } from "./helpers";
+import { boundingRect, midPoint } from "../helpers";
 // const clipboardy = require("clipboardy");
 
 const worldmapsvg = fs.readFileSync("./worldmap.svg", "utf-8");
