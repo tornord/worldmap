@@ -3,11 +3,17 @@ body {
   padding: 0;
   font-family: sans-serif;
   font-weight: 700;
+  background-color: beige;
 }
 
 button.btn {
   font-size: 19px;
   margin: 10px 5px;
+}
+
+svg {
+  background-color: #fff;
+
 }
 
 path {
@@ -38,6 +44,9 @@ path:hover {
 
 rect {
   fill: none;
-  stroke: #999;
+  stroke: none;
+}
+rect.selection-bounds {
+  stroke: #aaa;
   stroke-width: 0.3;
 }

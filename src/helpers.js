@@ -1,4 +1,4 @@
-import { svgPathProperties } from "svg-path-properties";
+// import { svgPathProperties } from "svg-path-properties";
 
 export function midPoint(points) {
   let sumArea = 0,
@@ -46,9 +46,9 @@ export function mergeBoundingRects(boundingRects) {
   };
 }
 
-function countryBoundingRect(country) {
-  // eslint-disable-next-line new-cap
-  const properties = new svgPathProperties(country.path);
-  const parts = properties.getParts();
-  return boundingRect(parts.map((e) => e.start));
-}
+// function countryBoundingRect(country) {
+//   // eslint-disable-next-line new-cap
+//   const properties = new svgPathProperties(country.path);
+//   const parts = properties.getParts();
+//   return boundingRect(parts.map((e) => e.start));
+// }
