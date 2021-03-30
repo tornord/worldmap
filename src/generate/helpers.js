@@ -1,5 +1,36 @@
 // import { svgPathProperties } from "svg-path-properties";
 
+export function translate({ x, y }, dx = 0, dy = 0) {
+  return { x: x + dx, y: y + dy };
+}
+
+export function partsToPath(parts, tx = 0, ty = 0) {
+  return (
+    // eslint-disable-next-line prefer-template
+    parts
+      .map((d, i, arr) => {
+        const pp = arr[(i + arr.length - 1) % arr.length];
+        const p = arr[i % arr.length];
+        const { x: px, y: py } = translate(pp.start, tx, ty);
+        const { x, y } = translate(p.start, tx, ty);
+        const z = pp.length < 0.01 && i !== 0 ? "Z" : "";
+        if (pp.length < 0.01 || i === 0) {
+          return `${z}M${x.toFixed(1)},${y.toFixed(1)}`;
+        }
+        const dx = x - px;
+        const dy = y - py;
+        if (Math.abs(dx) < 0.05) {
+          return `${z}v${dy.toFixed(1)}`;
+        }
+        if (Math.abs(dy) < 0.05) {
+          return `${z}h${dx.toFixed(1)}`;
+        }
+        return `${z}l${(x - px).toFixed(1)},${(y - py).toFixed(1)}`;
+      })
+      .join(" ") + "Z"
+  );
+}
+
 export function midPoint(points) {
   let sumArea = 0,
     sumX = 0,

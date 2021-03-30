@@ -1,8 +1,7 @@
 import fs from "fs";
 import { parseString } from "xml2js";
 import { svgPathProperties } from "svg-path-properties";
-import { boundingRect, midPoint } from "./helpers";
-// const clipboardy = require("clipboardy");
+import { boundingRect, midPoint, partsToPath } from "./helpers";
 
 const worldmapsvg = fs.readFileSync("./worldmap.svg", "utf-8");
 const countryMids = JSON.parse(fs.readFileSync("./countryMids.json", "utf-8"));
@@ -26,38 +25,6 @@ function keyBy(collection, iteratee) {
     }
     return p;
   }, {});
-}
-
-function translate({ x, y }) {
-  const dx = 0;
-  const dy = 0;
-  return { x: x + dx, y: y + dy };
-}
-function partsToPath(parts) {
-  return (
-    // eslint-disable-next-line prefer-template
-    parts
-      .map((d, i, arr) => {
-        const pp = arr[(i + arr.length - 1) % arr.length];
-        const p = arr[i % arr.length];
-        const { x: px, y: py } = translate(pp.start);
-        const { x, y } = translate(p.start);
-        const z = pp.length < 0.01 && i !== 0 ? "Z" : "";
-        if (pp.length < 0.01 || i === 0) {
-          return `${z}M${x.toFixed(1)},${y.toFixed(1)}`;
-        }
-        const dx = x - px;
-        const dy = y - py;
-        if (Math.abs(dx) < 0.05) {
-          return `${z}v${dy.toFixed(1)}`;
-        }
-        if (Math.abs(dy) < 0.05) {
-          return `${z}h${dx.toFixed(1)}`;
-        }
-        return `${z}l${(x - px).toFixed(1)},${(y - py).toFixed(1)}`;
-      })
-      .join(" ") + "Z"
-  );
 }
 
 const extraCountries = [
@@ -102,6 +69,7 @@ function main() {
       } else {
         console.log(`Missing continent for, code=${code}`);
       }
+      const points = parts.map((d) => d.start);
       let name = null;
       if (countriesByCode[code]) {
         name = countriesByCode[code][1];
@@ -109,13 +77,12 @@ function main() {
         console.log(`Country missing in countries.csv, code=${code}`);
       }
       let cm = countryMids.find((d) => d.code === code);
+      const p = midPoint(points);
       if (!cm) {
-        const p = midPoint(parts.map((d) => d.start));
         cm = { midX: round(p.x), midY: round(p.y) };
       } else {
         cm.midX = round(Number(cm.midX));
         cm.midY = round(Number(cm.midY));
-        const p = midPoint(parts.map((d) => ({ x: d.start.x, y: d.start.y })));
         p.x = round(p.x);
         p.y = round(p.y);
         const h = Math.hypot(p.x - cm.midX, p.y - cm.midY);
@@ -123,7 +90,7 @@ function main() {
           console.log(code, h, p.x, p.y, cm.midX, cm.midY);
         }
       }
-      const br = boundingRect(parts.map((d) => d.start));
+      const br = boundingRect(points);
       countries.push({
         code,
         continentCode,

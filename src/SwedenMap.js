@@ -1,13 +1,15 @@
 import React, { useRef, useState, useEffect } from "react";
 import { INITIAL_VALUE, ReactSVGPanZoom, TOOL_AUTO } from "react-svg-pan-zoom";
 // import { svgPathProperties } from 'svg-path-properties';
-import countries from "./countries";
+import countries from "./swedenRegions";
 import keyBy from "./keyBy";
 import { mergeBoundingRects } from "./helpers";
 
 window.mids = {};
 window.path = [];
+
 const countriesByCode = keyBy(countries, (d) => d.code);
+console.log(countriesByCode)
 
 // function round(x) {
 //   return Math.round(10 * x) / 10;
@@ -28,7 +30,7 @@ function expandBoundingRectToFitWidthHeightRatio(boundingRect, widthHeightRatio)
 
 // console.log(expandBoundingRectToFitWidthHeightRatio({ x: 1, y: 1, width: 4, height: 3 }, 4 / 1));
 
-export default function WorldMap({ dataByCountryCode, onClick, width, height, renderData, fitToSelection }) {
+export default function SwedenMap({ dataByCountryCode, onClick, width, height, renderData, fitToSelection }) {
   const viewer = useRef(null);
   window.viewer = viewer;
   const [value, setValue] = useState(INITIAL_VALUE);
