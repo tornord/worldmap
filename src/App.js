@@ -3,10 +3,12 @@ import { INITIAL_VALUE, ReactSVGPanZoom, TOOL_AUTO } from "react-svg-pan-zoom";
 // import { svgPathProperties } from 'svg-path-properties';
 import countries from "./countries";
 import swedenRegions from "./swedenRegions";
+import letters from "./letters";
 import keyBy from "./keyBy";
 import { mergeBoundingRects } from "./helpers";
 import WorldMap from "./WorldMap";
 import SwedenMap from "./SwedenMap";
+import LettersMap from "./LettersMap";
 
 window.mids = {};
 window.path = [];
@@ -38,6 +40,16 @@ export default function App() {
     />
     <SwedenMap
       dataByCountryCode={dataByRegionCode}
+      width={620}
+      height={400}
+      onClick={(country) => {
+        console.log("click", country);
+        setRandomModulo(Number(country.code.replace("R","")));
+      }}
+      fitToSelection={true}
+    />
+    <LettersMap
+      dataByCountryCode={{ [letters[randomModulo].code]: { value: 0 } }}
       width={620}
       height={400}
       onClick={(country) => {

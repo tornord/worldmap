@@ -2,40 +2,18 @@ import fs from "fs";
 import { parseString } from "xml2js";
 import { svgPathProperties } from "svg-path-properties";
 import { boundingRect, mergeBoundingRects, midPoint, translate } from "./helpers";
+import { svgPathBbox } from "svg-path-bbox";
 
 function round(x) {
-  return Math.round(10 * x) / 10;
+  return Math.round(100 * x) / 100;
 }
-
-const names = [
-  "Kalmar",
-  "Östergötland",
-  "Norrbotten",
-  "Västernorrland",
-  "Västerbotten",
-  "Gotland",
-  "Stockholm",
-  "Uppsala",
-  "Blekinge",
-  "Västra Götaland",
-  "Dalarna",
-  "Gävleborg",
-  "Jönköping",
-  "Kronoberg",
-  "Örebro",
-  "Västmanland",
-  "Halland",
-  "Sörmland",
-  "Värmland",
-  "Jämtland Härjedalen",
-  "Skåne"
-];
+const names = "ABCDEFGHIJKLMNOPQ".split("");
 
 function main() {
   const dx = 0;
   const dy = 0;
   const regions = [];
-  const swedenSvg = fs.readFileSync("./sweden.svg", "utf-8");
+  const swedenSvg = fs.readFileSync("./letters.svg", "utf-8");
   parseString(swedenSvg, (err, xml) => {
     let paths = xml.svg.path;
     for (let i = 0; i < paths.length; i++) {
@@ -44,7 +22,10 @@ function main() {
       const parts = properties.getParts();
       const points = parts.map((d) => d.start).map((d) => translate(d, dx, dy));
       const mid = midPoint(points);
-      const br = boundingRect(points);
+      let bb = svgPathBbox(path.$.d);
+      const br = { x: bb[0], y: bb[1], width: bb[2] - bb[0], height: bb[3] - bb[1] };
+      console.log(br);
+      // br = boundingRect(points);
       regions.push({
         code: `R${i}`,
         name: names[i],
@@ -55,7 +36,7 @@ function main() {
       });
     }
     console.log(mergeBoundingRects(regions.map((d) => d.boundingRect)), regions.length);
-    fs.writeFileSync("../swedenRegions.js", `module.exports = ${JSON.stringify(regions, null, 2)};\n`, "utf-8");
+    fs.writeFileSync("../letters.js", `module.exports = ${JSON.stringify(regions, null, 2)};\n`, "utf-8");
   });
 }
 
