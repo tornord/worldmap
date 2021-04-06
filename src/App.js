@@ -1,34 +1,49 @@
-import React, { useRef, useState, useEffect } from "react";
-import { INITIAL_VALUE, ReactSVGPanZoom, TOOL_AUTO } from "react-svg-pan-zoom";
-// import { svgPathProperties } from 'svg-path-properties';
+import React, { useState } from "react";
 import countries from "./countries";
 import swedenRegions from "./swedenRegions";
 import letters from "./letters";
 import keyBy from "./keyBy";
 import { mergeBoundingRects } from "./helpers";
-import WorldMap from "./WorldMap";
-import SwedenMap from "./SwedenMap";
-import LettersMap from "./LettersMap";
+// import WorldMap from "./WorldMap";
+// import SwedenMap from "./SwedenMap";
+import { SvgMap, AnimatedSvgMap } from "./SvgMap";
 
-window.mids = {};
-window.path = [];
+const regions = countries;
+
+// const start = [30, 30, 40];
+// const end = [135, 85, 60];
+// const interpolator = d3.interpolateZoom(start, end);
+// console.log(interpolator(0.1))
+
+// window.mids = {};
+// window.path = [];
 
 // console.log(expandBoundingRectToFitWidthHeightRatio({ x: 1, y: 1, width: 4, height: 3 }, 4 / 1));
 
 export default function App() {
-  const [randomModulo, setRandomModulo] = useState(Math.floor(swedenRegions.length * Math.random()));
-  const dataByCountryCode = countries.reduce((dict, c, i) => {
-    if (i % swedenRegions.length !== randomModulo) {
-      return dict;
-    }
-    dict[c.code] = { value: i.toFixed(0) };
-    return dict;
-  }, {});
-  const r = swedenRegions[randomModulo];
-  const dataByRegionCode = { [r.code]: { value: 0 } };
+  const [randomCode, setRandomCode] = useState(regions[Math.floor(regions.length * Math.random())].code);
+  // const dataByRegionId = countries.reduce((dict, c, i) => {
+  //   if (i % swedenRegions.length !== randomModulo) {
+  //     return dict;
+  //   }
+  //   dict[c.code] = { value: i.toFixed(0) };
+  //   return dict;
+  // }, {});
+  const regionsById = keyBy(regions, (d) => d.code);
+  const dataByRegionId = { [randomCode]: { value: 0 } };
+  let br = { x: 0, y: 0, width: 2000, height: 857 };
+  const dataEntries = Object.entries(dataByRegionId);
+  if (dataEntries.length > 0) {
+    br = mergeBoundingRects(dataEntries.map((d) => regionsById[d[0]].boundingRect));
+    const margin = 20;
+    br.x -= margin;
+    br.y -= margin;
+    br.width += 2 * margin;
+    br.height += 2 * margin;
+  }
   return (
     <>
-    <WorldMap
+      {/* <WorldMap
       dataByCountryCode={dataByCountryCode}
       width={620}
       height={400}
@@ -57,7 +72,19 @@ export default function App() {
         setRandomModulo(Number(country.code.replace("R","")));
       }}
       fitToSelection={true}
-    />
+    />     */}
+      <AnimatedSvgMap
+        dataByRegionId={dataByRegionId}
+        width={620}
+        height={400}
+        onClick={(region) => {
+          console.log("click", region);
+          setRandomCode(region.code);
+        }}
+        fitToSelection={true}
+        regions={regions}
+        boundingRect={br}
+      />
     </>
   );
 }
